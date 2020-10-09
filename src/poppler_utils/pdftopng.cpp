@@ -683,7 +683,7 @@ err1:
     return exitCode;
 }
 
-PYBIND11_MODULE(pdftopng, m) {
+PYBIND11_MODULE(_pdftopng, m) {
     m.doc() = "pdftopng"; // optional module docstring
     m.def("convert", &convert, py::arg("pdf_path"), py::arg("png_path"));
 }

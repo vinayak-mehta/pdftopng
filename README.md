@@ -21,8 +21,6 @@ $ mkdir build && cd build
 $ pip install .
 ```
 
-`-Wl,-rpath,poppler/build:`
-
 ## Usage
 
 ```
