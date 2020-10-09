@@ -37,7 +37,7 @@ ext_includes = [
 
 ext_modules = [
     Extension(
-        "_pdftopng",
+        "poppler_utils.pdftopng",
         # Sort input source files to ensure bit-for-bit reproducible builds
         # (https://github.com/pybind/python_example/pull/53)
         sorted(["src/poppler_utils/pdftopng.cpp"]),
@@ -91,9 +91,14 @@ class BuildExt(build_ext):
         "unix": ["-O3", "-Wall", "-shared", "-fPIC"],
     }
 
+    if sys.platform == "linux":
+        soname = "libpoppler.so"
+    elif sys.platform == "darwin":
+        soname = "libpoppler.dylib"
+
     l_opts = {
         "msvc": [],
-        "unix": ["-Wl,-rpath,lib/poppler/build", "lib/poppler/build/libpoppler.so"],
+        "unix": ["-Wl,-rpath,lib/poppler/build", f"lib/poppler/build/{soname}"],
     }
 
     if sys.platform == "darwin":

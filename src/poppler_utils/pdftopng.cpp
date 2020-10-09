@@ -373,12 +373,12 @@ static void processPageJobs()
 #endif // UTILS_USE_PTHREADS
 
 // int main(int argc, char *argv[])
-int convert(char *pdfFileName, char *pngFileName)
+void convert(char *pdfFilePath, char *pngFilePath)
 {
     PDFDoc *doc;
-    GooString *fileName = new GooString(pdfFileName);;
+    GooString *fileName = new GooString(pdfFilePath);;
     // https://stackoverflow.com/a/20944858/2780127
-    char *ppmRoot = pngFileName;
+    char *ppmRoot = pngFilePath;
     char *ppmFile;
     // GooString *ownerPW, *userPW;
     SplashColor paperColor;
@@ -680,10 +680,10 @@ err1:
     delete doc;
 // err0:
 
-    return exitCode;
+    // return exitCode;
 }
 
-PYBIND11_MODULE(_pdftopng, m) {
+PYBIND11_MODULE(pdftopng, m) {
     m.doc() = "pdftopng"; // optional module docstring
     m.def("convert", &convert, py::arg("pdf_path"), py::arg("png_path"));
 }
