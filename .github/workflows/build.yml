@@ -10,9 +10,9 @@ env:
   CIBW_BUILD: cp38-*
   CIBW_SKIP: "*-manylinux_i686"
   # CIBW_SKIP: "cp27-* cp35-* pp*"
-  CIBW_BEFORE_BUILD_LINUX: "build_linux.sh"
+  CIBW_BEFORE_BUILD_LINUX: "sh build_linux.sh"
   CIBW_REPAIR_WHEEL_COMMAND_LINUX: "auditwheel repair -w {dest_dir} {wheel}"
-  CIBW_BEFORE_BUILD_MACOS: "build_macos.sh"
+  CIBW_BEFORE_BUILD_MACOS: "sh build_macos.sh"
   CIBW_REPAIR_WHEEL_COMMAND_MACOS: "delocate-listdeps {wheel} && delocate-wheel -w {dest_dir} -v {wheel}"
 
 jobs:
