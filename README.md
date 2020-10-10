@@ -11,7 +11,7 @@ $ pip install .
 ## Usage
 
 ```
->>> import pdftopng
+>>> from poppler_utils import pdftopng
 >>> pdftopng.convert(pdf_path="foo.pdf", png_path="foo")
 >>>
 ```
