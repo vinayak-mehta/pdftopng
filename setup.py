@@ -23,15 +23,30 @@ requires = [
 ]
 dev_requires = ["Sphinx>=2.2.1"]
 dev_requires = dev_requires + requires
+
+library_dirs = []
+libraries = []
+
+if sys.platform == "win32":
+    # TODO: remove hard-coded path
+    vcpkg_dir = os.path.join("C:\\", "dev", "vcpkg", "installed", "x64-windows", "lib")
+    build_dir = os.path.join(os.getcwd(), "lib", "poppler", "build", "Release")
+    library_dirs.extend([vcpkg_dir, build_dir])
+    libraries.extend(
+        ["freetype", "fontconfig", "libpng16", "jpeg", "advapi32", "poppler"]
+    )
+
+poppler_dir = os.path.join(os.getcwd(), "lib", "poppler")
+
 ext_includes = [
-    "lib/poppler",
-    "lib/poppler/fofi",
-    "lib/poppler/goo",
-    "lib/poppler/poppler",
-    "lib/poppler/build",
-    "lib/poppler/build/poppler",
-    "lib/poppler/utils",
-    "lib/poppler/build/utils",
+    poppler_dir,
+    os.path.join(poppler_dir, "fofi"),
+    os.path.join(poppler_dir, "goo"),
+    os.path.join(poppler_dir, "utils"),
+    os.path.join(poppler_dir, "poppler"),
+    os.path.join(poppler_dir, "build"),
+    os.path.join(poppler_dir, "build", "utils"),
+    os.path.join(poppler_dir, "build", "poppler"),
     pybind11.get_include(),
 ]
 
@@ -40,12 +55,13 @@ ext_modules = [
         "pdftopng.pdftopng",
         # Sort input source files to ensure bit-for-bit reproducible builds
         # (https://github.com/pybind/python_example/pull/53)
-        sorted(["src/pdftopng/pdftopng.cpp"]),
+        sorted([os.path.join("src", "pdftopng", "pdftopng.cpp")]),
         include_dirs=ext_includes,
+        library_dirs=library_dirs,
+        libraries=libraries,
         language="c++",
     ),
 ]
-
 
 # cf http://bugs.python.org/issue26689
 def has_flag(compiler, flagname):
@@ -87,10 +103,11 @@ class BuildExt(build_ext):
     """A custom build extension for adding compiler-specific options."""
 
     c_opts = {
-        "msvc": ["/EHsc"],
+        "msvc": ["/EHsc", "/std:c++14"],
         "unix": ["-O3", "-Wall", "-shared", "-fPIC"],
     }
 
+    soname = ""
     if sys.platform == "linux":
         soname = "libpoppler.so"
     elif sys.platform == "darwin":
@@ -110,6 +127,7 @@ class BuildExt(build_ext):
         ct = self.compiler.compiler_type
         opts = self.c_opts.get(ct, [])
         link_opts = self.l_opts.get(ct, [])
+
         if ct == "unix":
             opts.append(cpp_flag(self.compiler))
             if has_flag(self.compiler, "-fvisibility=hidden"):
@@ -121,6 +139,7 @@ class BuildExt(build_ext):
             ]
             ext.extra_compile_args = opts
             ext.extra_link_args = link_opts
+
         build_ext.build_extensions(self)
 
 
