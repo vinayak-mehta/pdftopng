@@ -1,6 +1,6 @@
 # pdftopng
 
-A PDF to PNG conversion library. (based on `pdftoppm` from `poppler`)
+A PDF to PNG conversion library (based on `pdftoppm` from `poppler`)
 
 ## Installation
 
