@@ -2,14 +2,12 @@
 name: cibuildwheel
 
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - '*'
 
-# Do not build Python <=2.7, <=3.5, or PyPy.
-# Install Linux and MacOS required libraries / tools.
 env:
-  CIBW_BUILD: cp38-*
-  CIBW_SKIP: "*-manylinux_i686"
-  # CIBW_SKIP: "cp27-* cp35-* pp*"
+  CIBW_SKIP: "cp27-* cp35-* pp* *-manylinux_i686"
   CIBW_BEFORE_BUILD_LINUX: "sh build_linux.sh"
   CIBW_REPAIR_WHEEL_COMMAND_LINUX: "LD_LIBRARY_PATH=$(pwd)/lib/poppler/build/:$LD_LIBRARY_PATH auditwheel repair -w {dest_dir} {wheel}"
   CIBW_BEFORE_BUILD_MACOS: "sh build_macos.sh"
@@ -22,7 +20,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04, macos-latest]
-        # os: [ubuntu-18.04, windows-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -33,21 +30,6 @@ jobs:
         name: Install Python
         with:
           python-version: '3.8'
-
-      # - uses: ilammy/msvc-dev-cmd@v1
-      #   with:
-      #     arch: amd64
-
-      # - name: Build dependencies & wheels (Windows / amd64)
-      #   if: runner.os == 'Windows'
-      #   shell: cmd
-      #   run: |
-      #     python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
-      #     python -m cibuildwheel --output-dir wheelhouse
-      #   env:
-      #     CIBW_BUILD: "*win_amd64"
-      #     DISTUTILS_USE_SDK: 1
-      #     MSSdk: 1
 
       - name: Install cibuildwheel & build wheels (Linux & MacOS)
         if: runner.os != 'Windows'

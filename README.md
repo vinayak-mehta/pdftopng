@@ -1,17 +1,25 @@
- # poppler-utils
+# pdftopng
 
-Precompiled command-line utilities (based on Poppler) for manipulating PDF files and converting them to other formats.
+A PDF to PNG conversion library. (based on `pdftoppm` from `poppler`)
 
 ## Installation
 
 ```
-$ pip install .
+$ pip install pdftopng
 ```
 
 ## Usage
 
 ```
->>> from poppler_utils import pdftopng
->>> pdftopng.convert(pdf_path="foo.pdf", png_path="foo")
->>>
+from pdftopng import pdftopng
+
+pdftopng.convert(pdf_path="foo.pdf", png_path="foo")
 ```
+
+## Versioning
+
+`pdftopng` uses [Semantic Versioning](https://semver.org/). For the available versions, see the tags on this repository.
+
+## License
+
+This project is licensed under GPLv2, see the [LICENSE](https://raw.githubusercontent.com/vinayak-mehta/pdftopng/master/LICENSE) file for details.

@@ -11,7 +11,7 @@ from setuptools import setup, Extension, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 about = {}
 
-with open(os.path.join(here, "src", "poppler_utils", "__version__.py"), "r") as f:
+with open(os.path.join(here, "src", "pdftopng", "__version__.py"), "r") as f:
     exec(f.read(), about)
 
 with open("README.md", "r") as f:
@@ -37,10 +37,10 @@ ext_includes = [
 
 ext_modules = [
     Extension(
-        "poppler_utils.pdftopng",
+        "pdftopng.pdftopng",
         # Sort input source files to ensure bit-for-bit reproducible builds
         # (https://github.com/pybind/python_example/pull/53)
-        sorted(["src/poppler_utils/pdftopng.cpp"]),
+        sorted(["src/pdftopng/pdftopng.cpp"]),
         include_dirs=ext_includes,
         language="c++",
     ),

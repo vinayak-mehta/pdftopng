@@ -14,9 +14,9 @@ def generate_version(version, prerelease=None, revision=None):
     return "".join(version_parts)
 
 
-__title__ = "poppler-utils"
-__description__ = "Precompiled command-line utilities (based on Poppler) for manipulating PDF files and converting them to other formats."
-__url__ = "https://github.com/vinayak-mehta/poppler-utils"
+__title__ = "pdftopng"
+__description__ = "A PDF to PNG conversion library. (based on pdftoppm from poppler)"
+__url__ = "https://github.com/vinayak-mehta/pdftopng"
 __version__ = generate_version(VERSION, prerelease=PRERELEASE, revision=REVISION)
 __author__ = "Vinayak Mehta"
 __author_email__ = "vmehta94@gmail.com"
