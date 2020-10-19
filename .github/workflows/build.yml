@@ -2,9 +2,10 @@
 name: cibuildwheel
 
 on:
-  push:
-    tags:
-      - '*'
+  workflow_dispatch:
+#   push:
+#     tags:
+#       - '*'
 
 env:
   CIBW_SKIP: "cp27-* cp35-* pp* *-manylinux_i686"
@@ -32,11 +33,26 @@ jobs:
         with:
           python-version: '3.8'
 
-      - name: Install cibuildwheel & build wheels (Linux & MacOS)
-        if: runner.os != 'Windows'
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
+      - name: Build dependencies & wheels (Windows / amd64)
+        if: runner.os == 'Windows'
+        shell: cmd
         run: |
           python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
           python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "*win_amd64"
+          DISTUTILS_USE_SDK: 1
+          MSSdk: 1
+
+#       - name: Install cibuildwheel & build wheels (Linux & MacOS)
+#         if: runner.os != 'Windows'
+#         run: |
+#           python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
+#           python -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v2
         with:
