@@ -21,7 +21,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-latest]
+        # os: [ubuntu-18.04, macos-latest]
+        os: [windows-latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -58,18 +59,18 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
 
-  upload_pypi:
-    needs: [build_wheels]
-    runs-on: ubuntu-latest
-    # upload to PyPI on every tag starting with 'v'
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: artifact
-          path: dist
+#   upload_pypi:
+#     needs: [build_wheels]
+#     runs-on: ubuntu-latest
+#     # upload to PyPI on every tag starting with 'v'
+#     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+#     steps:
+#       - uses: actions/download-artifact@v2
+#         with:
+#           name: artifact
+#           path: dist
 
-      - uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
+#       - uses: pypa/gh-action-pypi-publish@master
+#         with:
+#           user: __token__
+#           password: ${{ secrets.pypi_password }}
