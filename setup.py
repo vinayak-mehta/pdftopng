@@ -17,7 +17,6 @@ with open(os.path.join(here, "src", "pdftopng", "__version__.py"), "r") as f:
 with open("README.md", "r") as f:
     readme = f.read()
 
-
 requires = [
     "Click>=7.0",
 ]
@@ -26,10 +25,8 @@ dev_requires = dev_requires + requires
 
 library_dirs = []
 libraries = []
-
 if sys.platform == "win32":
-    # TODO: remove hard-coded path
-    vcpkg_dir = os.path.join("C:\\", "dev", "vcpkg", "installed", "x64-windows", "lib")
+    vcpkg_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", "x64-windows", "lib")
     build_dir = os.path.join(os.getcwd(), "lib", "poppler", "build", "Release")
     library_dirs.extend([vcpkg_dir, build_dir])
     libraries.extend(
@@ -144,6 +141,10 @@ class BuildExt(build_ext):
 
 
 def setup_package():
+    # package_data = {}
+    # if sys.platform == 'win32':
+    #     package_data = {'pdftopng': ['*.dll']}
+
     metadata = dict(
         name=about["__title__"],
         version=about["__version__"],
@@ -154,8 +155,9 @@ def setup_package():
         author=about["__author__"],
         author_email=about["__author_email__"],
         license=about["__license__"],
-        package_dir={"": "src"},
         packages=find_packages(where="src", exclude=("tests",)),
+        package_dir={"": "src"},
+        # package_data=package_data,
         ext_modules=ext_modules,
         include_package_data=True,
         install_requires=requires,
