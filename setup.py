@@ -2,6 +2,8 @@
 
 import os
 import sys
+import glob
+import shutil
 
 import pybind11
 from setuptools.command.build_ext import build_ext
@@ -26,9 +28,11 @@ dev_requires = dev_requires + requires
 library_dirs = []
 libraries = []
 if sys.platform == "win32":
-    vcpkg_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", "x64-windows", "lib")
+    # set VCPKG_INSTALLATION_ROOT=C:\dev\vcpkg
+    # TODO: Handle 32-bit
+    vcpkg_lib_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", "x64-windows", "lib")
     build_dir = os.path.join(os.getcwd(), "lib", "poppler", "build", "Release")
-    library_dirs.extend([vcpkg_dir, build_dir])
+    library_dirs.extend([vcpkg_lib_dir, build_dir])
     libraries.extend(
         ["freetype", "fontconfig", "libpng16", "jpeg", "advapi32", "poppler"]
     )
@@ -140,10 +144,19 @@ class BuildExt(build_ext):
         build_ext.build_extensions(self)
 
 
+def copy_dlls():
+    # set VCPKG_INSTALLATION_ROOT=C:\dev\vcpkg
+    # TODO: Handle 32-bit
+    vcpkg_bin_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", "x64-windows", "bin")
+    for file in glob.glob(os.path.join(vcpkg_bin_dir, "*.dll")):
+        shutil.copy(file, os.path.join("src", "pdftopng"))
+
+
 def setup_package():
-    # package_data = {}
-    # if sys.platform == 'win32':
-    #     package_data = {'pdftopng': ['*.dll']}
+    package_data = {}
+    if sys.platform == 'win32':
+        copy_dlls()
+        package_data = {'pdftopng': ['*.dll']}
 
     metadata = dict(
         name=about["__title__"],
@@ -157,7 +170,7 @@ def setup_package():
         license=about["__license__"],
         packages=find_packages(where="src", exclude=("tests",)),
         package_dir={"": "src"},
-        # package_data=package_data,
+        package_data=package_data,
         ext_modules=ext_modules,
         include_package_data=True,
         install_requires=requires,

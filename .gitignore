@@ -5,7 +5,11 @@ __pycache__/
 
 # C extensions
 *.so
+*.dll
 tmp/
+
+# Wheels
+wheelhouse/
 
 # Distribution / packaging
 .Python
