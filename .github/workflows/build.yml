@@ -44,10 +44,10 @@ jobs:
         run: |
           python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
           python -m cibuildwheel --output-dir wheelhouse
-        # env:
+        env:
         #   CIBW_BUILD: "*win_amd64"
-        #   DISTUTILS_USE_SDK: 1
-        #   MSSdk: 1
+          DISTUTILS_USE_SDK: 1
+          MSSdk: 1
 
       # - name: Install cibuildwheel & build wheels (Linux & MacOS)
       #   if: runner.os != 'Windows'
