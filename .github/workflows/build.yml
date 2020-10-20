@@ -33,7 +33,6 @@ jobs:
         name: Install Python
         with:
           python-version: 3.8
-          architecture: x64
 
       - uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -46,7 +45,7 @@ jobs:
           python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
           python -m cibuildwheel --output-dir wheelhouse
         env:
-        #   CIBW_BUILD: "*win_amd64"
+          CIBW_BUILD: "cp38-win_amd64"
           DISTUTILS_USE_SDK: 1
           MSSdk: 1
 
