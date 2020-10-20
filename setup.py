@@ -144,20 +144,7 @@ class BuildExt(build_ext):
         build_ext.build_extensions(self)
 
 
-def copy_dlls():
-    # set VCPKG_INSTALLATION_ROOT=C:\dev\vcpkg
-    # TODO: Handle 32-bit
-    vcpkg_bin_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", "x64-windows", "bin")
-    for file in glob.glob(os.path.join(vcpkg_bin_dir, "*.dll")):
-        shutil.copy(file, os.path.join("src", "pdftopng"))
-
-
 def setup_package():
-    package_data = {}
-    if sys.platform == 'win32':
-        copy_dlls()
-        package_data = {'pdftopng': ['*.dll']}
-
     metadata = dict(
         name=about["__title__"],
         version=about["__version__"],
@@ -170,7 +157,6 @@ def setup_package():
         license=about["__license__"],
         packages=find_packages(where="src", exclude=("tests",)),
         package_dir={"": "src"},
-        package_data=package_data,
         ext_modules=ext_modules,
         include_package_data=True,
         install_requires=requires,
