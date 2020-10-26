@@ -13,7 +13,6 @@ env:
   CIBW_REPAIR_WHEEL_COMMAND_LINUX: "LD_LIBRARY_PATH=$(pwd)/lib/poppler/build/:$LD_LIBRARY_PATH auditwheel repair -w {dest_dir} {wheel}"
   CIBW_BEFORE_BUILD_MACOS: "sh scripts/build_macos.sh"
   CIBW_REPAIR_WHEEL_COMMAND_MACOS: "DYLD_LIBRARY_PATH=$(pwd)/lib/poppler/build:$DYLD_LIBRARY_PATH delocate-listdeps {wheel} && delocate-wheel -w {dest_dir} -v {wheel}"
-  CIBW_BEFORE_BUILD_WINDOWS: "call scripts/build_win.bat"
   CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "call scripts/wheel_repair.bat {wheel} {dest_dir}"
 
 jobs:
@@ -37,12 +36,29 @@ jobs:
 
       - uses: ilammy/msvc-dev-cmd@v1
         with:
+          arch: x86
+
+      - name: Build dependencies & wheels (Windows / x86)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          call scripts\build_win_x86.bat
+          python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
+          python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp38-win32"
+          DISTUTILS_USE_SDK: 1
+          MSSdk: 1
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
           arch: amd64
 
       - name: Build dependencies & wheels (Windows / amd64)
         if: runner.os == 'Windows'
         shell: cmd
         run: |
+          call scripts\build_win_x64.bat
           python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
           python -m cibuildwheel --output-dir wheelhouse
         env:

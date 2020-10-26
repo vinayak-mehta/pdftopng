@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import shutil
 import hashlib
 import zipfile
@@ -78,17 +79,22 @@ with zipfile.ZipFile(args.WHEEL_FILE, "r") as wheel:
     pyd_path = list(filter(lambda x: x.endswith(".pyd"), wheel.namelist()))[0]
     tmp_pyd_path = os.path.join(old_wheel_dir, package_name, os.path.basename(pyd_path))
 
+# https://docs.python.org/3/library/platform.html#platform.architecture
+x = "x64" if sys.maxsize > 2**32 else "x86"
+# set VCPKG_INSTALLATION_ROOT=C:\dev\vcpkg
+dll_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", f"{x}-windows", "bin")
+
 dll_dependencies = defaultdict(set)
-find_dll_dependencies(tmp_pyd_path, args.DLL_DIR)
+find_dll_dependencies(tmp_pyd_path, dll_dir)
 
 for dll, dependencies in dll_dependencies.items():
     mapping = {}
 
     for dep in dependencies:
-        hashed_name = hash_filename(os.path.join(args.DLL_DIR, dep))  # already basename
+        hashed_name = hash_filename(os.path.join(dll_dir, dep))  # already basename
         mapping[dep.encode("ascii")] = hashed_name.encode("ascii")
         shutil.copy(
-            os.path.join(args.DLL_DIR, dep),
+            os.path.join(dll_dir, dep),
             os.path.join(new_wheel_dir, package_name, hashed_name),
         )
 
@@ -100,8 +106,8 @@ for dll, dependencies in dll_dependencies.items():
             new_wheel_dir, package_name, os.path.basename(tmp_pyd_path)
         )
     else:
-        old_name = os.path.join(args.DLL_DIR, dll)
-        hashed_name = hash_filename(os.path.join(args.DLL_DIR, dll))  # already basename
+        old_name = os.path.join(dll_dir, dll)
+        hashed_name = hash_filename(os.path.join(dll_dir, dll))  # already basename
         new_name = os.path.join(new_wheel_dir, package_name, hashed_name)
 
     mangle_filename(old_name, new_name, mapping)

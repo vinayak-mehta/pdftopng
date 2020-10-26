@@ -28,9 +28,10 @@ dev_requires = dev_requires + requires
 library_dirs = []
 libraries = []
 if sys.platform == "win32":
+    # https://docs.python.org/3/library/platform.html#platform.architecture
+    x = "x64" if sys.maxsize > 2**32 else "x86"
     # set VCPKG_INSTALLATION_ROOT=C:\dev\vcpkg
-    # TODO: Handle 32-bit
-    vcpkg_lib_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", "x64-windows", "lib")
+    vcpkg_lib_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", f"{x}-windows", "lib")
     build_dir = os.path.join(os.getcwd(), "lib", "poppler", "build", "Release")
     library_dirs.extend([vcpkg_lib_dir, build_dir])
     libraries.extend(
