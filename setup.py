@@ -25,20 +25,21 @@ requires = [
 dev_requires = ["Sphinx>=2.2.1"]
 dev_requires = dev_requires + requires
 
+poppler_dir = os.path.join(os.getcwd(), "lib", "poppler")
+build_dir = os.path.join(os.getcwd(), "lib", "poppler", "build", "Release")
 library_dirs = []
 libraries = []
+
 if sys.platform == "win32":
     # https://docs.python.org/3/library/platform.html#platform.architecture
     x = "x64" if sys.maxsize > 2**32 else "x86"
     # set VCPKG_INSTALLATION_ROOT=C:\dev\vcpkg
     vcpkg_lib_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", f"{x}-windows", "lib")
-    build_dir = os.path.join(os.getcwd(), "lib", "poppler", "build", "Release")
+    build_dir = os.path.join(os.getcwd(), "lib", "poppler", f"build_{x}", "Release")
     library_dirs.extend([vcpkg_lib_dir, build_dir])
     libraries.extend(
         ["freetype", "fontconfig", "libpng16", "jpeg", "advapi32", "poppler"]
     )
-
-poppler_dir = os.path.join(os.getcwd(), "lib", "poppler")
 
 ext_includes = [
     poppler_dir,
@@ -46,9 +47,9 @@ ext_includes = [
     os.path.join(poppler_dir, "goo"),
     os.path.join(poppler_dir, "utils"),
     os.path.join(poppler_dir, "poppler"),
-    os.path.join(poppler_dir, "build"),
-    os.path.join(poppler_dir, "build", "utils"),
-    os.path.join(poppler_dir, "build", "poppler"),
+    build_dir,
+    os.path.join(build_dir, "utils"),
+    os.path.join(build_dir, "poppler"),
     pybind11.get_include(),
 ]
 
