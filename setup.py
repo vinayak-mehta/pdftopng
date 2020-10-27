@@ -33,11 +33,15 @@ libraries = []
 if sys.platform == "win32":
     # https://docs.python.org/3/library/platform.html#platform.architecture
     x = "x64" if sys.maxsize > 2**32 else "x86"
+
+    poppler_dir = os.path.join(os.getcwd(), "lib", "poppler")
+    build_dir = os.path.join(poppler_dir, f"build_win_{x}")
+
     # set VCPKG_INSTALLATION_ROOT=C:\dev\vcpkg
     vcpkg_lib_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", f"{x}-windows", "lib")
-    poppler_dir = os.path.join("D:", "a", "pdftopng", "pdftopng", "lib", "poppler")
-    build_dir = os.path.join(poppler_dir, f"build_win_{x}", "Release")
-    library_dirs.extend([vcpkg_lib_dir, build_dir])
+    poppler_lib_dir = os.path.join(build_dir, "Release")
+
+    library_dirs.extend([vcpkg_lib_dir, poppler_lib_dir])
     libraries.extend(
         ["freetype", "fontconfig", "libpng16", "jpeg", "advapi32", "poppler"]
     )
