@@ -35,6 +35,7 @@ if sys.platform == "win32":
     x = "x64" if sys.maxsize > 2**32 else "x86"
     # set VCPKG_INSTALLATION_ROOT=C:\dev\vcpkg
     vcpkg_lib_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", f"{x}-windows", "lib")
+    poppler_dir = os.path.join("D:", "a", "pdftopng", "pdftopng", "lib", "poppler")
     build_dir = os.path.join(poppler_dir, f"build_win_{x}", "Release")
     library_dirs.extend([vcpkg_lib_dir, build_dir])
     libraries.extend(
