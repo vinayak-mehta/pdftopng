@@ -34,21 +34,21 @@ jobs:
         with:
           python-version: 3.8
 
-      # - uses: ilammy/msvc-dev-cmd@v1
-      #   with:
-      #     arch: x86
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
 
-      # - name: Build dependencies & wheels (Windows / x86)
-      #   if: runner.os == 'Windows'
-      #   shell: cmd
-      #   run: |
-      #     call scripts\build_win_x86.bat
-      #     python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
-      #     python -m cibuildwheel --output-dir wheelhouse
-      #   env:
-      #     CIBW_BUILD: "cp38-win32"
-      #     DISTUTILS_USE_SDK: 1
-      #     MSSdk: 1
+      - name: Build dependencies & wheels (Windows / x86)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          call scripts\build_win_x86.bat
+          python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
+          python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_BUILD: "cp38-win32"
+          DISTUTILS_USE_SDK: 1
+          MSSdk: 1
 
       - uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -76,18 +76,18 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
 
-  # upload_pypi:
-  #   needs: [build_wheels]
-  #   runs-on: ubuntu-latest
-  #   # upload to PyPI on every tag starting with 'v'
-  #   if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
-  #   steps:
-  #     - uses: actions/download-artifact@v2
-  #       with:
-  #         name: artifact
-  #         path: dist
+  upload_pypi:
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
+    # upload to PyPI on every tag starting with 'v'
+    # if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: artifact
+          path: dist
 
-  #     - uses: pypa/gh-action-pypi-publish@master
-  #       with:
-  #         user: __token__
-  #         password: ${{ secrets.pypi_password }}
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_password }}
