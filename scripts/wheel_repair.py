@@ -76,7 +76,7 @@ if __name__ == "__main__":
     with zipfile.ZipFile(args.WHEEL_FILE, "r") as wheel:
         wheel.extractall(old_wheel_dir)
         wheel.extractall(new_wheel_dir)
-        pyd_path = list(filter(lambda x: x.endswith(".pyd"), wheel.namelist()))[0]
+        pyd_path = list(filter(lambda x: x.endswith((".pyd", ".dll")), wheel.namelist()))[0]
         tmp_pyd_path = os.path.join(old_wheel_dir, package_name, os.path.basename(pyd_path))
 
     # https://docs.python.org/3/library/platform.html#platform.architecture
