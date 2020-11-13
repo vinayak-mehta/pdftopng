@@ -1,10 +1,8 @@
 # Automatically build binary wheels and source packages.
 name: cibuildwheel
 
-on:
-  push:
-    tags:
-      - '*'
+# always
+on: [push]
 
 env:
   CIBW_BUILD: "cp3?-manylinux_x86_64 cp3?-macosx_x86_64"
@@ -14,6 +12,8 @@ env:
   CIBW_BEFORE_BUILD_MACOS: "sh scripts/build_macos.sh"
   CIBW_REPAIR_WHEEL_COMMAND_MACOS: "DYLD_LIBRARY_PATH=$(pwd)/lib/poppler/build:$DYLD_LIBRARY_PATH delocate-listdeps {wheel} && delocate-wheel -w {dest_dir} -v {wheel}"
   CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "call scripts/wheel_repair.bat {wheel} {dest_dir}"
+  CIBW_BUILD_VERBOSITY: 3
+  CIBW_BUILD_VERBOSITY_WINDOWS: 3
 
 jobs:
   build_wheels:
@@ -21,7 +21,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-latest, windows-latest]
+        os: [windows-latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -37,18 +37,18 @@ jobs:
         with:
           arch: x86
 
-      - name: Build dependencies & wheels (Windows / x86)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          call scripts\build_win_x86.bat
-          python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
-          python -m cibuildwheel --output-dir wheelhouse
-        env:
-          CIBW_BUILD: "cp3?-win32"
-          CIBW_SKIP: "cp35-*"
-          DISTUTILS_USE_SDK: 1
-          MSSdk: 1
+#      - name: Build dependencies & wheels (Windows / x86)
+#        if: runner.os == 'Windows'
+#        shell: cmd
+#        run: |
+#          call scripts\build_win_x86.bat
+#          python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
+#          python -m cibuildwheel --output-dir wheelhouse
+#        env:
+#          CIBW_BUILD: "cp3?-win32"
+#          CIBW_SKIP: "cp35-*"
+#          DISTUTILS_USE_SDK: 1
+#          MSSdk: 1
 
       - uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -62,7 +62,7 @@ jobs:
           python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
           python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: "cp3?-win_amd64"
+          CIBW_BUILD: "cp38-win_amd64" #"cp3?-win_amd64"
           CIBW_SKIP: "cp35-*"
           DISTUTILS_USE_SDK: 1
           MSSdk: 1
@@ -77,18 +77,18 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
 
-  upload_pypi:
-    needs: [build_wheels]
-    runs-on: ubuntu-latest
-    # upload to PyPI on every tag starting with 'v'
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: artifact
-          path: dist
-
-      - uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
+#  upload_pypi:
+#    needs: [build_wheels]
+#    runs-on: ubuntu-latest
+#    # upload to PyPI on every tag starting with 'v'
+#    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+#    steps:
+#      - uses: actions/download-artifact@v2
+#        with:
+#          name: artifact
+#          path: dist
+#
+#      - uses: pypa/gh-action-pypi-publish@master
+#        with:
+#          user: __token__
+#          password: ${{ secrets.pypi_password }}

@@ -46,75 +46,75 @@ def mangle_filename(old_filename, new_filename, mapping):
     with open(new_filename, "wb") as f:
         f.write(new_buf)
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Vendor in external shared library dependencies of a wheel."
+    )
 
-parser = argparse.ArgumentParser(
-    description="Vendor in external shared library dependencies of a wheel."
-)
+    parser.add_argument("WHEEL_FILE", type=str, help="Path to wheel file")
+    parser.add_argument(
+        "-d", "--dll-dir", dest="DLL_DIR", type=str, help="Directory to find the DLLs"
+    )
+    parser.add_argument(
+        "-w",
+        "--wheel-dir",
+        dest="WHEEL_DIR",
+        type=str,
+        help=('Directory to store delocated wheels (default: "wheelhouse/")'),
+        default="wheelhouse/",
+    )
 
-parser.add_argument("WHEEL_FILE", type=str, help="Path to wheel file")
-parser.add_argument(
-    "-d", "--dll-dir", dest="DLL_DIR", type=str, help="Directory to find the DLLs"
-)
-parser.add_argument(
-    "-w",
-    "--wheel-dir",
-    dest="WHEEL_DIR",
-    type=str,
-    help=('Directory to store delocated wheels (default: "wheelhouse/")'),
-    default="wheelhouse/",
-)
+    args = parser.parse_args()
 
-args = parser.parse_args()
+    wheel_name = os.path.basename(args.WHEEL_FILE)
+    package_name = wheel_name.split("-")[0]
+    repaired_wheel = os.path.join(args.WHEEL_DIR, wheel_name)
 
-wheel_name = os.path.basename(args.WHEEL_FILE)
-package_name = wheel_name.split("-")[0]
-repaired_wheel = os.path.join(args.WHEEL_DIR, wheel_name)
+    old_wheel_dir = tempfile.mkdtemp()
+    new_wheel_dir = tempfile.mkdtemp()
 
-old_wheel_dir = tempfile.mkdtemp()
-new_wheel_dir = tempfile.mkdtemp()
+    with zipfile.ZipFile(args.WHEEL_FILE, "r") as wheel:
+        wheel.extractall(old_wheel_dir)
+        wheel.extractall(new_wheel_dir)
+        pyd_path = list(filter(lambda x: x.endswith((".pyd", ".dll")), wheel.namelist()))[0]
+        tmp_pyd_path = os.path.join(old_wheel_dir, package_name, os.path.basename(pyd_path))
 
-with zipfile.ZipFile(args.WHEEL_FILE, "r") as wheel:
-    wheel.extractall(old_wheel_dir)
-    wheel.extractall(new_wheel_dir)
-    pyd_path = list(filter(lambda x: x.endswith(".pyd"), wheel.namelist()))[0]
-    tmp_pyd_path = os.path.join(old_wheel_dir, package_name, os.path.basename(pyd_path))
+    # https://docs.python.org/3/library/platform.html#platform.architecture
+    x = "x64" if sys.maxsize > 2**32 else "x86"
+    # set VCPKG_INSTALLATION_ROOT=C:\dev\vcpkg
+    dll_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", f"{x}-windows", "bin")
 
-# https://docs.python.org/3/library/platform.html#platform.architecture
-x = "x64" if sys.maxsize > 2**32 else "x86"
-# set VCPKG_INSTALLATION_ROOT=C:\dev\vcpkg
-dll_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", f"{x}-windows", "bin")
+    dll_dependencies = defaultdict(set)
+    find_dll_dependencies(tmp_pyd_path, dll_dir)
 
-dll_dependencies = defaultdict(set)
-find_dll_dependencies(tmp_pyd_path, dll_dir)
+    for dll, dependencies in dll_dependencies.items():
+        mapping = {}
 
-for dll, dependencies in dll_dependencies.items():
-    mapping = {}
-
-    for dep in dependencies:
-        hashed_name = hash_filename(os.path.join(dll_dir, dep))  # already basename
-        mapping[dep.encode("ascii")] = hashed_name.encode("ascii")
-        shutil.copy(
-            os.path.join(dll_dir, dep),
-            os.path.join(new_wheel_dir, package_name, hashed_name),
-        )
-
-    if dll.endswith(".pyd"):
-        old_name = os.path.join(
-            old_wheel_dir, package_name, os.path.basename(tmp_pyd_path)
-        )
-        new_name = os.path.join(
-            new_wheel_dir, package_name, os.path.basename(tmp_pyd_path)
-        )
-    else:
-        old_name = os.path.join(dll_dir, dll)
-        hashed_name = hash_filename(os.path.join(dll_dir, dll))  # already basename
-        new_name = os.path.join(new_wheel_dir, package_name, hashed_name)
-
-    mangle_filename(old_name, new_name, mapping)
-
-with zipfile.ZipFile(repaired_wheel, "w", zipfile.ZIP_DEFLATED) as new_wheel:
-    for root, dirs, files in os.walk(new_wheel_dir):
-        for file in files:
-            new_wheel.write(
-                os.path.join(root, file), os.path.join(os.path.basename(root), file)
+        for dep in dependencies:
+            hashed_name = hash_filename(os.path.join(dll_dir, dep))  # already basename
+            mapping[dep.encode("ascii")] = hashed_name.encode("ascii")
+            shutil.copy(
+                os.path.join(dll_dir, dep),
+                os.path.join(new_wheel_dir, package_name, hashed_name),
             )
+
+        if dll.endswith(".pyd"):
+            old_name = os.path.join(
+                old_wheel_dir, package_name, os.path.basename(tmp_pyd_path)
+            )
+            new_name = os.path.join(
+                new_wheel_dir, package_name, os.path.basename(tmp_pyd_path)
+            )
+        else:
+            old_name = os.path.join(dll_dir, dll)
+            hashed_name = hash_filename(os.path.join(dll_dir, dll))  # already basename
+            new_name = os.path.join(new_wheel_dir, package_name, hashed_name)
+
+        mangle_filename(old_name, new_name, mapping)
+
+    with zipfile.ZipFile(repaired_wheel, "w", zipfile.ZIP_DEFLATED) as new_wheel:
+        for root, dirs, files in os.walk(new_wheel_dir):
+            for file in files:
+                new_wheel.write(
+                    os.path.join(root, file), os.path.join(os.path.basename(root), file)
+                )
