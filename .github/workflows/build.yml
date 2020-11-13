@@ -1,6 +1,7 @@
 # Automatically build binary wheels and source packages.
 name: cibuildwheel
 
+# always
 on: [push]
 
 env:
