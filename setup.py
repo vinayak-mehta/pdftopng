@@ -22,7 +22,7 @@ with open("README.md", "r") as f:
 requires = [
     "Click>=7.0",
 ]
-dev_requires = ["Sphinx>=2.2.1"]
+dev_requires = ["Pillow>=8.2.0", "pytest>=6.2.3", "pytest-cov>=2.11.1"]
 dev_requires = dev_requires + requires
 
 poppler_dir = os.path.join(os.getcwd(), "lib", "poppler")
