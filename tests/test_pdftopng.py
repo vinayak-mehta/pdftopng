@@ -14,7 +14,7 @@ testdir = os.path.dirname(os.path.abspath(__file__))
 def test_pdftopng():
     filename = os.path.join(testdir, "foo.pdf")
 
-    pdftopng.convert(pdf_path=filename, png_path="/tmp/foo")
+    pdftopng.convert(pdf_path=filename, png_path="/tmp/foo.png")
 
     im1 = Image.open(os.path.join(testdir, "foo.png"))
     im2 = Image.open("/tmp/foo.png")

@@ -138,8 +138,7 @@ void convert(char *pdfFilePath, char *pngFilePath)
     PDFDoc *doc;
     GooString *fileName = new GooString(pdfFilePath);
     // https://stackoverflow.com/a/20944858/2780127
-    char *ppmRoot = pngFilePath;
-    char *ppmFile;
+    char *ppmFile = pngFilePath;
 
     SplashColor paperColor;
     SplashOutputDev *splashOut;
@@ -243,21 +242,7 @@ void convert(char *pdfFilePath, char *pngFilePath)
         if (!scaleDimensionBeforeRotation && needToRotate(doc->getPageRotate(pg)))
             std::swap(pg_w, pg_h);
 
-        if (ppmRoot != nullptr) {
-            const char *ext = png ? "png" : (jpeg || jpegcmyk) ? "jpg" : tiff ? "tif" : mono ? "pbm" : gray ? "pgm" : "ppm";
-            if (singleFile && !forceNum) {
-                ppmFile = new char[strlen(ppmRoot) + 1 + strlen(ext) + 1];
-                sprintf(ppmFile, "%s.%s", ppmRoot, ext);
-            } else {
-                ppmFile = new char[strlen(ppmRoot) + 1 + pg_num_len + 1 + strlen(ext) + 1];
-                sprintf(ppmFile, "%s%s%0*d.%s", ppmRoot, sep, pg_num_len, pg, ext);
-            }
-        } else {
-            ppmFile = nullptr;
-        }
         savePageSlice(doc, splashOut, pg, param_x, param_y, param_w, param_h, pg_w, pg_h, ppmFile);
-
-        delete[] ppmFile;
     }
     delete splashOut;
 
