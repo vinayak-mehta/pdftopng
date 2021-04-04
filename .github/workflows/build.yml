@@ -4,7 +4,7 @@ name: cibuildwheel
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 env:
   CIBW_BUILD: "cp3?-manylinux_x86_64 cp3?-macosx_x86_64"
