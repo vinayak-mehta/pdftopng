@@ -42,7 +42,7 @@ jobs:
         shell: cmd
         run: |
           call scripts\build_win_x86.bat
-          python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
+          python -m pip --disable-pip-version-check install cibuildwheel==1.10.0
           python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BUILD: "cp3?-win32"
@@ -59,7 +59,7 @@ jobs:
         shell: cmd
         run: |
           call scripts\build_win_x64.bat
-          python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
+          python -m pip --disable-pip-version-check install cibuildwheel==1.10.0
           python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BUILD: "cp3?-win_amd64"
@@ -70,7 +70,7 @@ jobs:
       - name: Install cibuildwheel & build wheels (Linux & MacOS)
         if: runner.os != 'Windows'
         run: |
-          python -m pip --disable-pip-version-check install cibuildwheel==1.6.1
+          python -m pip --disable-pip-version-check install cibuildwheel==1.10.0
           python -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v2
