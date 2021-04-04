@@ -98,6 +98,7 @@ static bool enableFreeType = true;
 static bool fontAntialias = true;
 static bool vectorAntialias = true;
 static SplashThinLineMode thinLineMode = splashThinLineDefault;
+static bool quiet = false;
 static bool needToRotate(int angle)
 {
     return (angle == 90) || (angle == 270);
