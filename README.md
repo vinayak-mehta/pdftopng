@@ -13,7 +13,7 @@ $ pip install pdftopng
 ```
 from pdftopng import pdftopng
 
-pdftopng.convert(pdf_path="foo.pdf", png_path="foo")
+pdftopng.convert(pdf_path="foo.pdf", png_path="foo.png")
 ```
 
 ## Testing
