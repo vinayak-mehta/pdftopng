@@ -32,13 +32,15 @@ libraries = []
 
 if sys.platform == "win32":
     # https://docs.python.org/3/library/platform.html#platform.architecture
-    x = "x64" if sys.maxsize > 2**32 else "x86"
+    x = "x64" if sys.maxsize > 2 ** 32 else "x86"
 
     poppler_dir = os.path.join(os.getcwd(), "lib", "poppler")
     build_dir = os.path.join(poppler_dir, f"build_win_{x}")
 
     # set VCPKG_INSTALLATION_ROOT=C:\dev\vcpkg
-    vcpkg_lib_dir = os.path.join(os.environ["VCPKG_INSTALLATION_ROOT"], "installed", f"{x}-windows", "lib")
+    vcpkg_lib_dir = os.path.join(
+        os.environ["VCPKG_INSTALLATION_ROOT"], "installed", f"{x}-windows", "lib"
+    )
     poppler_lib_dir = os.path.join(build_dir, "Release")
 
     library_dirs.extend([vcpkg_lib_dir, poppler_lib_dir])
@@ -168,6 +170,11 @@ def setup_package():
         include_package_data=True,
         install_requires=requires,
         extras_require={"dev": dev_requires},
+        entry_points={
+            "console_scripts": [
+                "pdftopng = pdftopng.cli:cli",
+            ],
+        },
         classifiers=[
             # Trove classifiers
             # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers

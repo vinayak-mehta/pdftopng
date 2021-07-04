@@ -16,6 +16,10 @@ from pdftopng import pdftopng
 pdftopng.convert(pdf_path="foo.pdf", png_path="foo.png")
 ```
 
+```
+$ pdftopng /path/to/pdf /path/to/png
+```
+
 ## Testing
 
 First, set up the development environment using:
