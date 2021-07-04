@@ -1,6 +1,6 @@
 //========================================================================
 //
-// pdftopng.cc
+// pdftopng.cpp
 //
 // Copyright 2003 Glyph & Cog, LLC
 //
@@ -18,7 +18,7 @@
 // Copyright (C) 2009 Michael K. Johnson <a1237@danlj.org>
 // Copyright (C) 2009 Shen Liang <shenzhuxi@gmail.com>
 // Copyright (C) 2009 Stefan Thomas <thomas@eload24.com>
-// Copyright (C) 2009-2011, 2015, 2018-2020 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2009-2011, 2015, 2018-2021 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2010, 2012, 2017 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2010 Hib Eris <hib@hiberis.nl>
 // Copyright (C) 2010 Jonathan Liu <net147@gmail.com>
@@ -29,12 +29,14 @@
 // Copyright (C) 2015 William Bader <williambader@hotmail.com>
 // Copyright (C) 2018 Martin Packman <gzlist@googlemail.com>
 // Copyright (C) 2019 Yves-Gaël Chény <gitlab@r0b0t.fr>
-// Copyright (C) 2019, 2020 Oliver Sander <oliver.sander@tu-dresden.de>
+// Copyright (C) 2019-2021 Oliver Sander <oliver.sander@tu-dresden.de>
 // Copyright (C) 2019 <corentinf@free.fr>
 // Copyright (C) 2019 Kris Jurka <jurka@ejurka.com>
 // Copyright (C) 2019 Sébastien Berthier <s.berthier@bee-buzziness.com>
 // Copyright (C) 2020 Stéfan van der Walt <sjvdwalt@gmail.com>
-// Copyright (C) 2020 Vinayak Mehta <vmehta94@gmail.com>
+// Copyright (C) 2020 Philipp Knechtges <philipp-dev@knechtges.com>
+// Copyright (C) 2021 Diogo Kollross <diogoko@gmail.com>
+// Copyright (C) 2021 Vinayak Mehta <vmehta94@gmail.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -49,7 +51,7 @@
 #endif
 #include <cstdio>
 #include <cmath>
-
+#include "parseargs.h"
 #include "goo/gmem.h"
 #include "goo/GooString.h"
 #include "GlobalParams.h"
@@ -60,8 +62,25 @@
 #include "splash/Splash.h"
 #include "splash/SplashErrorCodes.h"
 #include "SplashOutputDev.h"
-
+#include "Win32Console.h"
 #include "numberofcharacters.h"
+#include "sanitychecks.h"
+
+// Uncomment to build pdftoppm with pthreads
+// You may also have to change the buildsystem to
+// link pdftoppm to pthread library
+// This is here for developer testing not user ready
+// #define UTILS_USE_PTHREADS 1
+
+#ifdef UTILS_USE_PTHREADS
+#    include <cerrno>
+#    include <pthread.h>
+#    include <deque>
+#endif // UTILS_USE_PTHREADS
+
+#ifdef USE_CMS
+#    include <lcms2.h>
+#endif
 
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
@@ -70,7 +89,7 @@ static int firstPage = 1;
 static int lastPage = 0;
 static bool printOnlyOdd = false;
 static bool printOnlyEven = false;
-static bool singleFile = true;
+static bool singleFile = false;
 static bool scaleDimensionBeforeRotation = false;
 static double resolution = 300.0;
 static double x_resolution = 150.0;
@@ -82,23 +101,53 @@ static int param_x = 0;
 static int param_y = 0;
 static int param_w = 0;
 static int param_h = 0;
-
+static int sz = 0;
 static bool hideAnnotations = false;
 static bool useCropBox = false;
 static bool mono = false;
 static bool gray = false;
+#ifdef USE_CMS
+static GooString displayprofilename;
+static GfxLCMSProfilePtr displayprofile;
+static GooString defaultgrayprofilename;
+static GfxLCMSProfilePtr defaultgrayprofile;
+static GooString defaultrgbprofilename;
+static GfxLCMSProfilePtr defaultrgbprofile;
+static GooString defaultcmykprofilename;
+static GfxLCMSProfilePtr defaultcmykprofile;
+#endif
 static char sep[2] = "-";
 static bool forceNum = false;
-static bool png = true;
+static bool png = false;
 static bool jpeg = false;
 static bool jpegcmyk = false;
 static bool tiff = false;
+static GooString jpegOpt;
+static int jpegQuality = -1;
+static bool jpegProgressive = false;
+static bool jpegOptimize = false;
 static bool overprint = false;
+static char enableFreeTypeStr[16] = "";
 static bool enableFreeType = true;
+static char antialiasStr[16] = "";
+static char vectorAntialiasStr[16] = "";
 static bool fontAntialias = true;
 static bool vectorAntialias = true;
+static char ownerPassword[33] = "";
+static char userPassword[33] = "";
+static char TiffCompressionStr[16] = "";
+static char thinLineModeStr[8] = "";
 static SplashThinLineMode thinLineMode = splashThinLineDefault;
+#ifdef UTILS_USE_PTHREADS
+static int numberOfJobs = 1;
+#endif // UTILS_USE_PTHREADS
 static bool quiet = false;
+static bool progress = false;
+static bool printVersion = false;
+static bool printHelp = false;
+
+static constexpr int kOtherError = 99;
+
 static bool needToRotate(int angle)
 {
     return (angle == 90) || (angle == 270);
@@ -135,7 +184,6 @@ static void savePageSlice(PDFDoc *doc, SplashOutputDev *splashOut, int pg, int x
 
 void convert(char *pdfFilePath, char *pngFilePath)
 {
-    PDFDoc *doc;
     GooString *fileName = new GooString(pdfFilePath);
     // https://stackoverflow.com/a/20944858/2780127
     char *ppmFile = pngFilePath;
@@ -155,7 +203,7 @@ void convert(char *pdfFilePath, char *pngFilePath)
     // read config file
     globalParams = std::make_unique<GlobalParams>();
 
-    doc = PDFDocFactory().createPDFDoc(*fileName);
+    std::unique_ptr<PDFDoc> doc(PDFDocFactory().createPDFDoc(*fileName));
     delete fileName;
 
     if (!doc->isOk()) {
@@ -163,6 +211,9 @@ void convert(char *pdfFilePath, char *pngFilePath)
         goto err1;
     }
 
+    // get page range
+    if (firstPage < 1)
+        firstPage = 1;
     if (singleFile && lastPage < 1)
         lastPage = firstPage;
     if (lastPage < 1 || lastPage > doc->getNumPages())
@@ -202,7 +253,7 @@ void convert(char *pdfFilePath, char *pngFilePath)
     splashOut->setFontAntialias(fontAntialias);
     splashOut->setVectorAntialias(vectorAntialias);
     splashOut->setEnableFreeType(enableFreeType);
-    splashOut->startDoc(doc);
+    splashOut->startDoc(doc.get());
 
     pg_num_len = numberOfCharacters(doc->getNumPages());
     for (pg = firstPage; pg <= lastPage; ++pg) {
@@ -242,13 +293,13 @@ void convert(char *pdfFilePath, char *pngFilePath)
         if (!scaleDimensionBeforeRotation && needToRotate(doc->getPageRotate(pg)))
             std::swap(pg_w, pg_h);
 
-        savePageSlice(doc, splashOut, pg, param_x, param_y, param_w, param_h, pg_w, pg_h, ppmFile);
+        savePageSlice(doc.get(), splashOut, pg, param_x, param_y, param_w, param_h, pg_w, pg_h, ppmFile);
     }
     delete splashOut;
 
     exitCode = 0;
 err1:
-    delete doc;
+    ;
 }
 
 PYBIND11_MODULE(pdftopng, m) {
