@@ -51,7 +51,6 @@
 #endif
 #include <cstdio>
 #include <cmath>
-#include "parseargs.h"
 #include "goo/gmem.h"
 #include "goo/GooString.h"
 #include "GlobalParams.h"
@@ -62,25 +61,7 @@
 #include "splash/Splash.h"
 #include "splash/SplashErrorCodes.h"
 #include "SplashOutputDev.h"
-#include "Win32Console.h"
 #include "numberofcharacters.h"
-#include "sanitychecks.h"
-
-// Uncomment to build pdftoppm with pthreads
-// You may also have to change the buildsystem to
-// link pdftoppm to pthread library
-// This is here for developer testing not user ready
-// #define UTILS_USE_PTHREADS 1
-
-#ifdef UTILS_USE_PTHREADS
-#    include <cerrno>
-#    include <pthread.h>
-#    include <deque>
-#endif // UTILS_USE_PTHREADS
-
-#ifdef USE_CMS
-#    include <lcms2.h>
-#endif
 
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
@@ -101,53 +82,22 @@ static int param_x = 0;
 static int param_y = 0;
 static int param_w = 0;
 static int param_h = 0;
-static int sz = 0;
 static bool hideAnnotations = false;
 static bool useCropBox = false;
 static bool mono = false;
 static bool gray = false;
-#ifdef USE_CMS
-static GooString displayprofilename;
-static GfxLCMSProfilePtr displayprofile;
-static GooString defaultgrayprofilename;
-static GfxLCMSProfilePtr defaultgrayprofile;
-static GooString defaultrgbprofilename;
-static GfxLCMSProfilePtr defaultrgbprofile;
-static GooString defaultcmykprofilename;
-static GfxLCMSProfilePtr defaultcmykprofile;
-#endif
 static char sep[2] = "-";
 static bool forceNum = false;
-static bool png = false;
+static bool png = true;
 static bool jpeg = false;
 static bool jpegcmyk = false;
 static bool tiff = false;
-static GooString jpegOpt;
-static int jpegQuality = -1;
-static bool jpegProgressive = false;
-static bool jpegOptimize = false;
 static bool overprint = false;
-static char enableFreeTypeStr[16] = "";
 static bool enableFreeType = true;
-static char antialiasStr[16] = "";
-static char vectorAntialiasStr[16] = "";
 static bool fontAntialias = true;
 static bool vectorAntialias = true;
-static char ownerPassword[33] = "";
-static char userPassword[33] = "";
-static char TiffCompressionStr[16] = "";
-static char thinLineModeStr[8] = "";
 static SplashThinLineMode thinLineMode = splashThinLineDefault;
-#ifdef UTILS_USE_PTHREADS
-static int numberOfJobs = 1;
-#endif // UTILS_USE_PTHREADS
 static bool quiet = false;
-static bool progress = false;
-static bool printVersion = false;
-static bool printHelp = false;
-
-static constexpr int kOtherError = 99;
-
 static bool needToRotate(int angle)
 {
     return (angle == 90) || (angle == 270);
@@ -211,9 +161,6 @@ void convert(char *pdfFilePath, char *pngFilePath)
         goto err1;
     }
 
-    // get page range
-    if (firstPage < 1)
-        firstPage = 1;
     if (singleFile && lastPage < 1)
         lastPage = firstPage;
     if (lastPage < 1 || lastPage > doc->getNumPages())

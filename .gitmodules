@@ -1,3 +1,3 @@
 [submodule "poppler"]
 	path = lib/poppler
-	url = git@github.com:freedesktop/poppler
+	url = https://github.com/freedesktop/poppler
