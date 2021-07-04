@@ -2,8 +2,7 @@
 
 import click
 
-from pdftopng import pdftopng
-
+from . import pdftopng
 from . import __version__
 
 
@@ -18,4 +17,4 @@ def cli(ctx, *args, **kwargs):
     pdf_path = kwargs["pdf_path"]
     png_path = kwargs["png_path"]
 
-    pdftopng.convert(pdf_path, png_path)
+    pdftopng.convert(pdf_path=pdf_path, png_path=png_path)
