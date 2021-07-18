@@ -30,7 +30,11 @@ build_dir = os.path.join(poppler_dir, "build")
 library_dirs = []
 libraries = []
 
-if sys.platform == "win32":
+if sys.platform in ["linux", "darwin"]:
+    library_dirs.extend([build_dir])
+    libraries.extend(["poppler"])
+    print(library_dirs, libraries)
+elif sys.platform == "win32":
     # https://docs.python.org/3/library/platform.html#platform.architecture
     x = "x64" if sys.maxsize > 2 ** 32 else "x86"
 
@@ -48,7 +52,7 @@ if sys.platform == "win32":
         ["freetype", "fontconfig", "libpng16", "jpeg", "advapi32", "poppler"]
     )
 
-ext_includes = [
+include_dirs = [
     poppler_dir,
     os.path.join(poppler_dir, "fofi"),
     os.path.join(poppler_dir, "goo"),
@@ -66,7 +70,7 @@ ext_modules = [
         # Sort input source files to ensure bit-for-bit reproducible builds
         # (https://github.com/pybind/python_example/pull/53)
         sorted([os.path.join("src", "pdftopng", "pdftopng.cpp")]),
-        include_dirs=ext_includes,
+        include_dirs=include_dirs,
         library_dirs=library_dirs,
         libraries=libraries,
         language="c++",
@@ -117,15 +121,16 @@ class BuildExt(build_ext):
         "unix": ["-O3", "-Wall", "-shared", "-fPIC"],
     }
 
-    soname = ""
-    if sys.platform == "linux":
-        soname = "libpoppler.so"
-    elif sys.platform == "darwin":
-        soname = "libpoppler.dylib"
+    # soname = ""
+    # if sys.platform == "linux":
+    #     soname = "libpoppler.so"
+    # elif sys.platform == "darwin":
+    #     soname = "libpoppler.dylib"
 
     l_opts = {
         "msvc": [],
-        "unix": ["-Wl,-rpath,lib/poppler/build", f"lib/poppler/build/{soname}"],
+        # "unix": ["-Wl,-rpath,lib/poppler/build", f"lib/poppler/build/{soname}"],
+        "unix": [],
     }
 
     if sys.platform == "darwin":
