@@ -33,8 +33,8 @@ libraries = []
 if sys.platform in ["linux", "darwin"]:
     library_dirs.extend([build_dir])
     libraries.extend(["poppler"])
-    print(library_dirs, libraries)
-elif sys.platform == "win32":
+
+if sys.platform == "win32":
     # https://docs.python.org/3/library/platform.html#platform.architecture
     x = "x64" if sys.maxsize > 2 ** 32 else "x86"
 
@@ -121,15 +121,8 @@ class BuildExt(build_ext):
         "unix": ["-O3", "-Wall", "-shared", "-fPIC"],
     }
 
-    # soname = ""
-    # if sys.platform == "linux":
-    #     soname = "libpoppler.so"
-    # elif sys.platform == "darwin":
-    #     soname = "libpoppler.dylib"
-
     l_opts = {
         "msvc": [],
-        # "unix": ["-Wl,-rpath,lib/poppler/build", f"lib/poppler/build/{soname}"],
         "unix": [],
     }
 
