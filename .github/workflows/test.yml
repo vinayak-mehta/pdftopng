@@ -20,8 +20,10 @@ jobs:
       - name: Build poppler
         run: |
           sudo apt install build-essential cmake libfreetype-dev libfontconfig-dev libpng-dev libjpeg-dev
-          cd lib/poppler && mkdir build && cd build
-          cmake -D ENABLE_QT5=OFF -D ENABLE_LIBOPENJPEG=none -D ENABLE_CPP=OFF ..
+
+          cd lib/poppler
+          mkdir build && cd build
+          cmake -D ENABLE_QT5=OFF -D ENABLE_LIBOPENJPEG=none -D ENABLE_CPP=OFF -D ENABLE_BOOST=OFF ..
           make poppler
       - name: Install pdftopng
         run: |
@@ -29,4 +31,4 @@ jobs:
           pip install -e ".[dev]"
       - name: Test with pytest
         run: |
-          pytest --verbose --cov-report term --cov-report xml --cov=pdftopng tests/test_*.py
+          LD_LIBRARY_PATH=$(pwd)/lib/poppler/build/:$LD_LIBRARY_PATH pytest --verbose --cov-report term --cov-report xml --cov=pdftopng tests/test_*.py
