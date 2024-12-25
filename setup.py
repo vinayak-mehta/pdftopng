@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
 import glob
+import os
 import shutil
+import sys
 
 import pybind11
+import setuptools
+from setuptools import Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext
-from setuptools import setup, Extension, find_packages
-
 
 here = os.path.abspath(os.path.dirname(__file__))
 about = {}
@@ -36,7 +36,7 @@ if sys.platform in ["linux", "darwin"]:
 
 if sys.platform == "win32":
     # https://docs.python.org/3/library/platform.html#platform.architecture
-    x = "x64" if sys.maxsize > 2 ** 32 else "x86"
+    x = "x64" if sys.maxsize > 2**32 else "x86"
 
     poppler_dir = os.path.join(os.getcwd(), "lib", "poppler")
     build_dir = os.path.join(poppler_dir, f"build_win_{x}")
@@ -77,13 +77,14 @@ ext_modules = [
     ),
 ]
 
+
 # cf http://bugs.python.org/issue26689
 def has_flag(compiler, flagname):
     """Return a boolean indicating whether a flag name is supported on
     the specified compiler.
     """
-    import tempfile
     import os
+    import tempfile
 
     with tempfile.NamedTemporaryFile("w", suffix=".cpp", delete=False) as f:
         f.write("int main (int argc, char **argv) { return 0; }")
@@ -177,9 +178,11 @@ def setup_package():
             # Trove classifiers
             # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
             "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
+            "Programming Language :: Python :: 3.12",
+            "Programming Language :: Python :: 3.13",
         ],
         cmdclass={"build_ext": BuildExt},
     )
