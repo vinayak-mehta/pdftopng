@@ -1,0 +1,3 @@
+[submodule "lib/poppler"]
+	path = lib/poppler
+	url = https://gitlab.freedesktop.org/poppler/poppler.git
