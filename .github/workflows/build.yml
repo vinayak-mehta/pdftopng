@@ -14,6 +14,7 @@ env:
   # CIBW_REPAIR_WHEEL_COMMAND_LINUX: "LD_LIBRARY_PATH=$(pwd)/lib/poppler/build/:$LD_LIBRARY_PATH auditwheel repair -w {dest_dir} {wheel}"
   CIBW_BEFORE_BUILD_MACOS: "sh scripts/build_macos.sh"
   # CIBW_REPAIR_WHEEL_COMMAND_MACOS: "DYLD_LIBRARY_PATH=$(pwd)/lib/poppler/build:$DYLD_LIBRARY_PATH delocate-listdeps {wheel} && delocate-wheel -w {dest_dir} -v {wheel}"
+  CIBW_REPAIR_WHEEL_COMMAND_MACOS: "true"
   # CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "call scripts/wheel_repair.bat {wheel} {dest_dir}"
 
 jobs:
