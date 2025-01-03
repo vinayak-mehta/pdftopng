@@ -18,7 +18,7 @@
 // Copyright (C) 2009 Michael K. Johnson <a1237@danlj.org>
 // Copyright (C) 2009 Shen Liang <shenzhuxi@gmail.com>
 // Copyright (C) 2009 Stefan Thomas <thomas@eload24.com>
-// Copyright (C) 2009-2011, 2015, 2018-2021 Albert Astals Cid <aacid@kde.org>
+// Copyright (C) 2009-2011, 2015, 2018-2022 Albert Astals Cid <aacid@kde.org>
 // Copyright (C) 2010, 2012, 2017 Adrian Johnson <ajohnson@redneon.com>
 // Copyright (C) 2010 Hib Eris <hib@hiberis.nl>
 // Copyright (C) 2010 Jonathan Liu <net147@gmail.com>
@@ -36,7 +36,8 @@
 // Copyright (C) 2020 Stéfan van der Walt <sjvdwalt@gmail.com>
 // Copyright (C) 2020 Philipp Knechtges <philipp-dev@knechtges.com>
 // Copyright (C) 2021 Diogo Kollross <diogoko@gmail.com>
-// Copyright (C) 2021 Vinayak Mehta <vmehta94@gmail.com>
+// Copyright (C) 2021 Peter Williams <peter@newton.cx>
+// Copyright (C) 2022 Vinayak Mehta <vmehta94@gmail.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -45,9 +46,9 @@
 
 #include "config.h"
 #include <poppler-config.h>
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__CYGWIN__)
 #    include <fcntl.h> // for O_BINARY
-#    include <io.h> // for setmode
+#    include <io.h> // for _setmode
 #endif
 #include <cstdio>
 #include <cmath>
@@ -82,22 +83,20 @@ static int param_x = 0;
 static int param_y = 0;
 static int param_w = 0;
 static int param_h = 0;
+static int sz = 0;
 static bool hideAnnotations = false;
 static bool useCropBox = false;
 static bool mono = false;
 static bool gray = false;
-static char sep[2] = "-";
-static bool forceNum = false;
-static bool png = true;
-static bool jpeg = false;
 static bool jpegcmyk = false;
-static bool tiff = false;
 static bool overprint = false;
+static bool splashOverprintPreview = false;
 static bool enableFreeType = true;
 static bool fontAntialias = true;
 static bool vectorAntialias = true;
 static SplashThinLineMode thinLineMode = splashThinLineDefault;
 static bool quiet = false;
+
 static bool needToRotate(int angle)
 {
     return (angle == 90) || (angle == 270);
@@ -107,10 +106,12 @@ static auto annotDisplayDecideCbk = [](Annot *annot, void *user_data) { return !
 
 static void savePageSlice(PDFDoc *doc, SplashOutputDev *splashOut, int pg, int x, int y, int w, int h, double pg_w, double pg_h, char *ppmFile)
 {
-    if (w == 0)
+    if (w == 0) {
         w = (int)ceil(pg_w);
-    if (h == 0)
+    }
+    if (h == 0) {
         h = (int)ceil(pg_h);
+    }
     w = (x + w > pg_w ? (int)ceil(pg_w - x) : w);
     h = (y + h > pg_h ? (int)ceil(pg_h - y) : h);
     doc->displayPageSlice(splashOut, pg, x_resolution, y_resolution, 0, !useCropBox, false, false, x, y, w, h, nullptr, nullptr, annotDisplayDecideCbk, nullptr);
@@ -119,7 +120,9 @@ static void savePageSlice(PDFDoc *doc, SplashOutputDev *splashOut, int pg, int x
 
     if (ppmFile != nullptr) {
         SplashError e;
+
         e = bitmap->writeImgFile(splashFormatPng, ppmFile, x_resolution, y_resolution);
+
         if (e != splashOk) {
             fprintf(stderr, "Could not write image to %s; exiting\n", ppmFile);
             exit(EXIT_FAILURE);
@@ -150,21 +153,26 @@ void convert(char *pdfFilePath, char *pngFilePath)
         x_resolution = resolution;
         y_resolution = resolution;
     }
+
     // read config file
     globalParams = std::make_unique<GlobalParams>();
-
     std::unique_ptr<PDFDoc> doc(PDFDocFactory().createPDFDoc(*fileName));
     delete fileName;
-
     if (!doc->isOk()) {
         exitCode = 1;
         goto err1;
     }
 
-    if (singleFile && lastPage < 1)
+    // get page range
+    if (firstPage < 1) {
+        firstPage = 1;
+    }
+    if (singleFile && lastPage < 1) {
         lastPage = firstPage;
-    if (lastPage < 1 || lastPage > doc->getNumPages())
+    }
+    if (lastPage < 1 || lastPage > doc->getNumPages()) {
         lastPage = doc->getNumPages();
+    }
     if (lastPage < firstPage) {
         fprintf(stderr, "Wrong page range given: the first page (%d) can not be after the last page (%d).\n", firstPage, lastPage);
         goto err1;
@@ -187,7 +195,7 @@ void convert(char *pdfFilePath, char *pngFilePath)
 
     // write PPM files
     if (jpegcmyk || overprint) {
-        globalParams->setOverprintPreview(true);
+        splashOverprintPreview = true;
         splashClearColor(paperColor);
     } else {
         paperColor[0] = 255;
@@ -195,19 +203,25 @@ void convert(char *pdfFilePath, char *pngFilePath)
         paperColor[2] = 255;
     }
 
-    splashOut = new SplashOutputDev(mono ? splashModeMono1 : gray ? splashModeMono8 : (jpegcmyk || overprint) ? splashModeDeviceN8 : splashModeRGB8, 4, false, paperColor, true, thinLineMode);
+    splashOut = new SplashOutputDev(mono ? splashModeMono1 : gray ? splashModeMono8 : (jpegcmyk || overprint) ? splashModeDeviceN8 : splashModeRGB8, 4, false, paperColor, true, thinLineMode, splashOverprintPreview);
 
     splashOut->setFontAntialias(fontAntialias);
     splashOut->setVectorAntialias(vectorAntialias);
     splashOut->setEnableFreeType(enableFreeType);
     splashOut->startDoc(doc.get());
 
+
+    if (sz != 0) {
+        param_w = param_h = sz;
+    }
     pg_num_len = numberOfCharacters(doc->getNumPages());
     for (pg = firstPage; pg <= lastPage; ++pg) {
-        if (printOnlyEven && pg % 2 == 1)
+        if (printOnlyEven && pg % 2 == 1) {
             continue;
-        if (printOnlyOdd && pg % 2 == 0)
+        }
+        if (printOnlyOdd && pg % 2 == 0) {
             continue;
+        }
         if (useCropBox) {
             pg_w = doc->getPageCropWidth(pg);
             pg_h = doc->getPageCropHeight(pg);
@@ -216,34 +230,55 @@ void convert(char *pdfFilePath, char *pngFilePath)
             pg_h = doc->getPageMediaHeight(pg);
         }
 
-        if (scaleDimensionBeforeRotation && needToRotate(doc->getPageRotate(pg)))
+        if (scaleDimensionBeforeRotation && needToRotate(doc->getPageRotate(pg))) {
             std::swap(pg_w, pg_h);
+        }
 
+        // Handle requests for specific image size
         if (scaleTo != 0) {
-            resolution = (72.0 * scaleTo) / (pg_w > pg_h ? pg_w : pg_h);
+            if (pg_w > pg_h) {
+                resolution = (72.0 * scaleTo) / pg_w;
+                pg_w = scaleTo;
+                pg_h = pg_h * (resolution / 72.0);
+            } else {
+                resolution = (72.0 * scaleTo) / pg_h;
+                pg_h = scaleTo;
+                pg_w = pg_w * (resolution / 72.0);
+            }
             x_resolution = y_resolution = resolution;
         } else {
             if (x_scaleTo > 0) {
                 x_resolution = (72.0 * x_scaleTo) / pg_w;
-                if (y_scaleTo == -1)
+                pg_w = x_scaleTo;
+                if (y_scaleTo == -1) {
                     y_resolution = x_resolution;
+                }
             }
+
             if (y_scaleTo > 0) {
                 y_resolution = (72.0 * y_scaleTo) / pg_h;
-                if (x_scaleTo == -1)
+                pg_h = y_scaleTo;
+                if (x_scaleTo == -1) {
                     x_resolution = y_resolution;
+                }
+            }
+
+            // No specific image size requested---compute the size from the resolution
+            if (x_scaleTo <= 0) {
+                pg_w = pg_w * (x_resolution / 72.0);
+            }
+            if (y_scaleTo <= 0) {
+                pg_h = pg_h * (y_resolution / 72.0);
             }
         }
-        pg_w = pg_w * (x_resolution / 72.0);
-        pg_h = pg_h * (y_resolution / 72.0);
 
-        if (!scaleDimensionBeforeRotation && needToRotate(doc->getPageRotate(pg)))
+        if (!scaleDimensionBeforeRotation && needToRotate(doc->getPageRotate(pg))) {
             std::swap(pg_w, pg_h);
+        }
 
         savePageSlice(doc.get(), splashOut, pg, param_x, param_y, param_w, param_h, pg_w, pg_h, ppmFile);
     }
     delete splashOut;
-
     exitCode = 0;
 err1:
     ;
